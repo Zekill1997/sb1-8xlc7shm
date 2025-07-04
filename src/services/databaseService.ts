@@ -2,6 +2,7 @@ import { supabase } from '../config/supabase';
 import * as supabaseConfig from '../config/supabase';
 import { UserService, MessageService, NotificationService, AssignmentService } from './supabaseService';
 import { localDB } from './localDatabase';
+import { testSupabaseConnection } from '../config/supabase';
 import { User, Encadreur, ParentEleve, Administrateur } from '../types';
 
 // Service principal de base de données avec Supabase comme source de vérité
@@ -186,13 +187,10 @@ export class DatabaseService {
       console.log('📥 Synchronisation Supabase → Local (source de vérité)...');
       
       // Test de connectivité avant synchronisation
-      const connectionTest = await supabaseConfig.testSupabaseConnection();
-
+      const connectionTest = await testSupabaseConnection();
+      
       if (!connectionTest.success) {
         console.warn('⚠️ Supabase non accessible, synchronisation ignorée:', connectionTest.error);
-        this.isOnline = false;
-        return;
-      }
 
       this.isOnline = true;
       
