@@ -4,11 +4,11 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables. Please check your .env file.');
+  console.error('Missing Supabase environment variables. Please check your .env file.');
 }
 
 // Ensure URL doesn't have trailing slash
-const cleanUrl = supabaseUrl.endsWith('/') ? supabaseUrl.slice(0, -1) : supabaseUrl;
+const cleanUrl = supabaseUrl ? (supabaseUrl.endsWith('/') ? supabaseUrl.slice(0, -1) : supabaseUrl) : '';
 
 // Create Supabase client with proper configuration
 export const supabase = createClient(cleanUrl, supabaseAnonKey, {
@@ -25,13 +25,21 @@ export const supabase = createClient(cleanUrl, supabaseAnonKey, {
 // Test Supabase connectivity
 export const testSupabaseConnection = async (): Promise<{ success: boolean; error?: string }> => {
   try {
-    console.log('🔄 Test de connexion Supabase...');
+    console.log('🔄 Test de connexion Supabase...', supabaseUrl);
+    
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return {
+        success: false,
+        error: 'Variables d\'environnement Supabase manquantes. Vérifiez votre fichier .env.'
+      };
+    }
 
     // Simple connectivity test with timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000); // Augmenté à 8 secondes
 
     try {
+      console.log('🔄 Envoi requête test à Supabase...');
       const { error } = await supabase
         .from('users')
         .select('count')
@@ -358,11 +366,14 @@ export interface Database {
 let initializationAttempted = false;
 
 export const initializeSupabase = async () => {
-  if (initializationAttempted) return;
+  if (initializationAttempted) {
+    console.log('🔄 Initialisation Supabase déjà tentée, ignorée');
+    return;
+  }
   initializationAttempted = true;
 
   try {
-    console.log('🚀 Initialisation Supabase...');
+    console.log('🚀 Initialisation Supabase...', supabaseUrl);
     const status = await getSupabaseStatus();
     if (status.isOnline) {
       console.log('✅ Supabase connecté et opérationnel');
@@ -377,7 +388,7 @@ export const initializeSupabase = async () => {
 };
 
 // Initialisation différée pour éviter les blocages - augmenté à 2 secondes pour laisser plus de temps
-setTimeout(() => {
+setTimeout(async () => {
   initializeSupabase().catch(error => {
     console.warn('⚠️ Échec de l\'initialisation Supabase:', error);
   });

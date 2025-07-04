@@ -1,6 +1,5 @@
 import { supabase } from '../config/supabase';
 import * as supabaseConfig from '../config/supabase';
-import * as supabaseConfig from '../config/supabase';
 import { UserService, MessageService, NotificationService, AssignmentService } from './supabaseService';
 import { localDB } from './localDatabase';
 import { User, Encadreur, ParentEleve, Administrateur } from '../types';
@@ -50,19 +49,19 @@ export class DatabaseService {
   private async initializeService() {
     console.log('🚀 Initialisation service base de données - Supabase comme source de vérité');
     
-    // Vérifier la connectivité Supabase
+    // Vérifier la connectivité Supabase avec un délai pour laisser le temps de charger les variables d'environnement
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('count')
-        .limit(1);
-
-      if (!error) {
+      // Attendre un court délai pour s'assurer que les variables d'environnement sont chargées
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const connectionTest = await supabaseConfig.testSupabaseConnection();
+      
+      if (connectionTest.success) {
         console.log('✅ Connexion Supabase établie - Mode synchronisation complète');
         this.isOnline = true;
         await this.performFullSync();
       } else {
-        console.warn('⚠️ Supabase non disponible, mode local uniquement:', error.message);
+        console.warn('⚠️ Supabase non disponible, mode local uniquement:', connectionTest.error);
         this.isOnline = false;
       }
     } catch (error) {
@@ -184,7 +183,7 @@ export class DatabaseService {
   // Synchroniser de Supabase vers localStorage (Supabase = source de vérité)
   private async syncFromSupabaseToLocal() {
     try {
-      console.log('📥 Synchronisation Supabase → Local (source de vérité)...');
+      console.log('📥 Synchronisation Supabase → Local (source de vérité)...', this.isOnline);
       
       // Test de connectivité avant synchronisation
       const connectionTest = await supabaseConfig.testSupabaseConnection();
@@ -193,9 +192,9 @@ export class DatabaseService {
         console.warn('⚠️ Supabase non accessible, synchronisation ignorée:', connectionTest.error);
         this.isOnline = false;
         return;
+      } else {
+        this.isOnline = true;
       }
-
-      this.isOnline = true;
       
       // Récupérer tous les utilisateurs de Supabase
       const supabaseUsers = await UserService.getAllUsers();
