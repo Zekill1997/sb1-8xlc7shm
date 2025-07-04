@@ -1,4 +1,5 @@
 import { supabase } from '../config/supabase';
+import { testSupabaseConnection } from '../config/supabase';
 import { UserService, MessageService, NotificationService, AssignmentService } from './supabaseService';
 import { localDB } from './localDatabase';
 import { User, Encadreur, ParentEleve, Administrateur } from '../types';
@@ -185,13 +186,10 @@ export class DatabaseService {
       console.log('📥 Synchronisation Supabase → Local (source de vérité)...');
       
       // Test de connectivité avant synchronisation
-      const { data: testData, error: testError } = await supabase
-        .from('users')
-        .select('count')
-        .limit(1);
+      const connectionTest = await testSupabaseConnection();
 
-      if (testError) {
-        console.warn('⚠️ Supabase non accessible, synchronisation ignorée:', testError.message);
+      if (!connectionTest.success) {
+        console.warn('⚠️ Supabase non accessible, synchronisation ignorée:', connectionTest.error);
         this.isOnline = false;
         return;
       }
