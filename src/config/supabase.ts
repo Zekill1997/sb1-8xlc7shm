@@ -27,7 +27,7 @@ export const testSupabaseConnection = async (): Promise<{ success: boolean; erro
   try {
     // Simple connectivity test with timeout
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
 
     const { error } = await supabase
       .from('users')
@@ -49,7 +49,7 @@ export const testSupabaseConnection = async (): Promise<{ success: boolean; erro
     if (error.name === 'AbortError') {
       return {
         success: false,
-        error: 'Connection timeout to Supabase (5s)'
+        error: 'Connection timeout to Supabase (10s)'
       };
     }
     
