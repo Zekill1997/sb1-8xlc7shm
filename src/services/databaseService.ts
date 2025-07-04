@@ -191,6 +191,7 @@ export class DatabaseService {
       
       if (!connectionTest.success) {
         console.warn('⚠️ Supabase non accessible, synchronisation ignorée:', connectionTest.error);
+      }
 
       this.isOnline = true;
       
