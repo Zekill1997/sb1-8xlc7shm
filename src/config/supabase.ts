@@ -25,38 +25,48 @@ export const supabase = createClient(cleanUrl, supabaseAnonKey, {
 // Test Supabase connectivity
 export const testSupabaseConnection = async (): Promise<{ success: boolean; error?: string }> => {
   try {
+    console.log('🔄 Test de connexion Supabase...');
+
     // Simple connectivity test with timeout
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // Augmenté à 8 secondes
 
-    const { error } = await supabase
-      .from('users')
-      .select('count')
-      .limit(1)
-      .abortSignal(controller.signal);
+    try {
+      const { error } = await supabase
+        .from('users')
+        .select('count')
+        .limit(1)
+        .abortSignal(controller.signal);
 
-    clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
 
-    if (error) {
-      return { 
-        success: false, 
-        error: `Supabase error: ${error.message}` 
-      };
+      if (error) {
+        console.warn('⚠️ Erreur Supabase:', error.message);
+        return { 
+          success: false, 
+          error: `Supabase error: ${error.message}` 
+        };
+      }
+      
+      console.log('✅ Connexion Supabase réussie');
+      return { success: true };
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      throw fetchError;
     }
-
-    return { success: true };
   } catch (error: any) {
+    console.error('❌ Erreur de connexion Supabase:', error);
     if (error.name === 'AbortError') {
       return {
         success: false,
-        error: 'Connection timeout to Supabase (5s)'
+        error: 'Connection timeout to Supabase (8s)'
       };
     }
     
     if (error.message?.includes('Failed to fetch') || error.name === 'TypeError') {
       return {
         success: false,
-        error: 'Cannot connect to Supabase. Please check your internet connection and Supabase configuration.'
+        error: 'Impossible de se connecter à Supabase. Vérifiez votre connexion internet et la configuration Supabase.'
       };
     }
     

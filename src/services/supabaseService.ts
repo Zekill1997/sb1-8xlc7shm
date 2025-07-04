@@ -134,8 +134,8 @@ export class UserService {
   // Récupérer tous les utilisateurs
   static async getAllUsers(): Promise<User[]> {
     try {
-      // Test connection first
-      const connectionTest = await testSupabaseConnection();
+      // Test connection first using the imported function
+      const connectionTest = await supabaseConfig.testSupabaseConnection();
       if (!connectionTest.success) {
         console.error('❌ Supabase connection failed:', connectionTest.error);
         throw new Error(`Supabase connection failed: ${connectionTest.error}`);

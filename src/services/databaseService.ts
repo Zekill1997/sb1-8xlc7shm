@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase';
 import * as supabaseConfig from '../config/supabase';
+import * as supabaseConfig from '../config/supabase';
 import { UserService, MessageService, NotificationService, AssignmentService } from './supabaseService';
 import { localDB } from './localDatabase';
 import { User, Encadreur, ParentEleve, Administrateur } from '../types';
@@ -190,6 +191,8 @@ export class DatabaseService {
       
       if (!connectionTest.success) {
         console.warn('⚠️ Supabase non accessible, synchronisation ignorée:', connectionTest.error);
+        this.isOnline = false;
+        return;
       }
 
       this.isOnline = true;
@@ -334,6 +337,7 @@ export class DatabaseService {
   public async getAllUsers(): Promise<User[]> {
     try {
       // Si une synchronisation est en cours, utiliser le cache
+      // Si une synchronisation est en cours, utiliser le cache
       if (this.isSyncing) {
         console.log('🔄 Utilisation du cache pour les utilisateurs pendant la synchronisation');
         return this.dataCache.users;
@@ -341,7 +345,12 @@ export class DatabaseService {
       
       // Synchroniser d'abord si en ligne
       if (this.isOnline && !this.isSyncing) {
-        await this.performFullSync();
+        try {
+          await this.performFullSync();
+        } catch (syncError) {
+          console.warn('⚠️ Erreur lors de la synchronisation:', syncError);
+          // Continuer avec les données locales en cas d'erreur
+        }
       }
       
       return localDB.getAllUsers();
@@ -882,9 +891,11 @@ export class DatabaseService {
       if (!this.isOnline) {
         // Tester la connectivité
         try {
-          const { data, error } = await supabase.from('users').select('count').limit(1);
-          if (!error) {
+          const connectionTest = await supabaseConfig.testSupabaseConnection();
+          if (connectionTest.success) {
             this.isOnline = true;
+          } else {
+            return { success: false, error: connectionTest.error || 'Aucune connexion internet ou Supabase indisponible' };
           }
         } catch (e) {
           return { success: false, error: 'Aucune connexion internet ou Supabase indisponible' };
