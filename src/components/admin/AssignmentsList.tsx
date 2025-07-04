@@ -362,8 +362,8 @@ const AssignmentsList: React.FC<AssignmentsListProps> = ({ onClose, onRefresh })
                         <UserIcon className="w-5 h-5 text-orange-600" />
                       </div>
                       <div>
-                        <p className="font-medium">{selectedAssignment.parent?.prenoms} {selectedAssignment.parent?.nom}</p>
-                        <p className="text-sm text-gray-600">{selectedAssignment.parent?.classe}</p>
+                       <p className="font-medium">{selectedAssignment.parent?.prenoms || ''} {selectedAssignment.parent?.nom || ''}</p>
+                       <p className="text-sm text-gray-600">{selectedAssignment.parent?.classe || 'Non spécifiée'}</p>
                       </div>
                     </div>
                     
@@ -372,19 +372,19 @@ const AssignmentsList: React.FC<AssignmentsListProps> = ({ onClose, onRefresh })
                         <span className="text-gray-600">Email:</span>
                         <p className="font-medium flex items-center">
                           <Mail className="w-3 h-3 mr-1" />
-                          {selectedAssignment.parent?.email}
+                         {selectedAssignment.parent?.email || 'Non spécifié'}
                         </p>
                       </div>
                       <div>
                         <span className="text-gray-600">Commune:</span>
                         <p className="font-medium flex items-center">
                           <MapPin className="w-3 h-3 mr-1" />
-                          {selectedAssignment.parent?.commune}
+                         {selectedAssignment.parent?.commune || 'Non spécifiée'}
                         </p>
                       </div>
                     </div>
                     
-                    {selectedAssignment.parent?.besoins && selectedAssignment.parent.besoins.length > 0 && (
+                   {selectedAssignment.parent?.besoins && Array.isArray(selectedAssignment.parent.besoins) && selectedAssignment.parent.besoins.length > 0 && (
                       <div>
                         <span className="text-gray-600">Besoins:</span>
                         <div className="flex flex-wrap gap-1 mt-1">
@@ -411,8 +411,8 @@ const AssignmentsList: React.FC<AssignmentsListProps> = ({ onClose, onRefresh })
                         <UserIcon className="w-5 h-5 text-blue-600" />
                       </div>
                       <div>
-                        <p className="font-medium">{selectedAssignment.encadreur?.prenoms} {selectedAssignment.encadreur?.nom}</p>
-                        <p className="text-sm text-gray-600">{selectedAssignment.encadreur?.disciplines?.join(', ')}</p>
+                       <p className="font-medium">{selectedAssignment.encadreur?.prenoms || ''} {selectedAssignment.encadreur?.nom || ''}</p>
+                       <p className="text-sm text-gray-600">{selectedAssignment.encadreur?.disciplines && Array.isArray(selectedAssignment.encadreur.disciplines) ? selectedAssignment.encadreur.disciplines.join(', ') : 'Aucune discipline spécifiée'}</p>
                       </div>
                     </div>
                     
@@ -421,19 +421,19 @@ const AssignmentsList: React.FC<AssignmentsListProps> = ({ onClose, onRefresh })
                         <span className="text-gray-600">Email:</span>
                         <p className="font-medium flex items-center">
                           <Mail className="w-3 h-3 mr-1" />
-                          {selectedAssignment.encadreur?.email}
+                         {selectedAssignment.encadreur?.email || 'Non spécifié'}
                         </p>
                       </div>
                       <div>
                         <span className="text-gray-600">Commune d'intervention:</span>
                         <p className="font-medium flex items-center">
                           <MapPin className="w-3 h-3 mr-1" />
-                          {selectedAssignment.encadreur?.commune}
+                         {selectedAssignment.encadreur?.commune || 'Non spécifiée'}
                         </p>
                       </div>
                     </div>
                     
-                    {selectedAssignment.encadreur?.disciplines && selectedAssignment.encadreur.disciplines.length > 0 && (
+                   {selectedAssignment.encadreur?.disciplines && Array.isArray(selectedAssignment.encadreur.disciplines) && selectedAssignment.encadreur.disciplines.length > 0 && (
                       <div>
                         <span className="text-gray-600">Disciplines:</span>
                         <div className="flex flex-wrap gap-1 mt-1">
@@ -445,6 +445,19 @@ const AssignmentsList: React.FC<AssignmentsListProps> = ({ onClose, onRefresh })
                         </div>
                       </div>
                     )}
+                   
+                   {selectedAssignment.encadreur?.classes && Array.isArray(selectedAssignment.encadreur.classes) && selectedAssignment.encadreur.classes.length > 0 && (
+                     <div>
+                       <span className="text-gray-600">Classes enseignées:</span>
+                       <div className="flex flex-wrap gap-1 mt-1">
+                         {selectedAssignment.encadreur.classes.map((classe: string) => (
+                           <span key={classe} className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
+                             {classe}
+                           </span>
+                         ))}
+                       </div>
+                     </div>
+                   )}
                   </div>
                 </div>
 

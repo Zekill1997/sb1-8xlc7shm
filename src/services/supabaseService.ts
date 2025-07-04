@@ -653,6 +653,7 @@ export class AssignmentService {
       }
 
       console.log('✅ Relation dissociée dans Supabase:', data.relation_id);
+     console.log('✅ Nouvelle assignation créée dans Supabase:', data.assignment_id);
       
       // Vérifier et réparer les relations pour s'assurer de la cohérence
       await this.checkAndRepairRelations();

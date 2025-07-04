@@ -883,6 +883,22 @@ export class LocalDatabaseService {
         }
       }
 
+     // Créer une nouvelle assignation en attente
+     if (parent && encadreur) {
+       const relationData = this.db.approvedRelations[relationIndex];
+       const newAssignment: Assignment = {
+         id: this.generateId(),
+         parentEleveId,
+         encadreurId,
+         compatibilityScore: relationData.compatibilityScore,
+         criteria: relationData.criteria,
+         assignedBy: relationData.approvedBy,
+         assignedAt: new Date().toISOString()
+       };
+       
+       this.db.assignments.push(newAssignment);
+       console.log('✅ Nouvelle assignation en attente créée après dissociation');
+     }
       this.saveDatabase();
 
       // Créer des notifications si les utilisateurs existent
@@ -890,8 +906,8 @@ export class LocalDatabaseService {
         this.createNotification(
           parentEleveId,
           'ASSIGNMENT',
-          'Relation terminée',
-          'Votre relation avec l\'encadreur a été terminée. Vous pouvez demander un nouvel encadreur.',
+         'Relation terminée et nouvelle assignation créée',
+         'Votre relation avec l\'encadreur a été terminée. Une nouvelle assignation est en attente d\'approbation.',
           { encadreurId }
         );
       }
@@ -900,8 +916,8 @@ export class LocalDatabaseService {
         this.createNotification(
           encadreurId,
           'ASSIGNMENT',
-          'Relation terminée',
-          'Votre relation avec un élève a été terminée.',
+         'Relation terminée et nouvelle assignation créée',
+         'Votre relation avec un élève a été terminée. Une nouvelle assignation est en attente d\'approbation.',
           { parentEleveId }
         );
       }
