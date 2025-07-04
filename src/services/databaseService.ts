@@ -1,4 +1,4 @@
-import { supabase, testSupabaseConnection } from '../config/supabase';
+import { supabase } from '../config/supabase';
 import { UserService, MessageService, NotificationService, AssignmentService } from './supabaseService';
 import { localDB } from './localDatabase';
 import { User, Encadreur, ParentEleve, Administrateur } from '../types';
