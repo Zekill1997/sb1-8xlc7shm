@@ -134,23 +134,29 @@ export class UserService {
   // Récupérer tous les utilisateurs
   static async getAllUsers(): Promise<User[]> {
     try {
-      console.log('📊 Récupération utilisateurs Supabase...');
+      // Test connection first
+      const connectionTest = await testSupabaseConnection();
+      if (!connectionTest.success) {
+        console.error('❌ Supabase connection failed:', connectionTest.error);
+        throw new Error(`Supabase connection failed: ${connectionTest.error}`);
+      }
+
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('❌ Erreur récupération utilisateurs Supabase:', error);
-        return [];
+        console.error('❌ Error fetching users from Supabase:', error);
+        throw new Error(`Failed to fetch users: ${error.message}`);
       }
 
       const users = data.map(this.mapDatabaseToUser);
-      console.log('✅ Utilisateurs Supabase récupérés:', users.length);
+      console.log('✅ Users fetched from Supabase:', users.length);
       return users;
     } catch (error) {
-      console.error('❌ Erreur récupération utilisateurs Supabase:', error);
-      return [];
+      console.error('❌ Error in getAllUsers:', error);
+      throw error;
     }
   }
 

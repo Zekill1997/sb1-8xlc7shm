@@ -1,126 +1,73 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Configuration Supabase avec les variables d'environnement
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-console.log('🔧 Configuration Supabase:', {
-  url: supabaseUrl ? 'Définie' : 'Manquante',
-  key: supabaseAnonKey ? 'Définie' : 'Manquante',
-  urlValue: supabaseUrl,
-  keyLength: supabaseAnonKey ? supabaseAnonKey.length : 0
-});
-
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('⚠️ Variables d\'environnement Supabase manquantes. Vérifiez votre fichier .env');
-  console.error('VITE_SUPABASE_URL:', supabaseUrl ? 'Définie' : 'Manquante');
-  console.error('VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? 'Définie' : 'Manquante');
+  throw new Error('Missing Supabase environment variables. Please check your .env file.');
 }
 
-// Ensure URL doesn't have trailing slash et validation
-const cleanUrl = supabaseUrl ? (supabaseUrl.endsWith('/') ? supabaseUrl.slice(0, -1) : supabaseUrl) : '';
+// Ensure URL doesn't have trailing slash
+const cleanUrl = supabaseUrl.endsWith('/') ? supabaseUrl.slice(0, -1) : supabaseUrl;
 
-// Configuration du client Supabase avec gestion d'erreurs renforcée
-export const supabase = createClient(cleanUrl, supabaseAnonKey || '', {
+// Create Supabase client with proper configuration
+export const supabase = createClient(cleanUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: false,
-    flowType: 'pkce'
-  },
-  global: {
-    headers: {
-      'X-Client-Info': 'superapprenant-ci@1.0.0'
-    }
+    detectSessionInUrl: false
   },
   db: {
     schema: 'public'
-  },
-  realtime: {
-    params: {
-      eventsPerSecond: 10
-    }
   }
 });
 
-// Test de connectivité Supabase avec gestion d'erreurs améliorée et timeout augmenté
+// Test Supabase connectivity
 export const testSupabaseConnection = async (): Promise<{ success: boolean; error?: string }> => {
   try {
-    console.log('🔍 Test de connectivité Supabase...');
-    
-    if (!supabaseUrl || !supabaseAnonKey) {
+    // Simple connectivity test with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    const { error } = await supabase
+      .from('users')
+      .select('count')
+      .limit(1)
+      .abortSignal(controller.signal);
+
+    clearTimeout(timeoutId);
+
+    if (error) {
       return { 
         success: false, 
-        error: 'Variables d\'environnement Supabase manquantes' 
+        error: `Supabase error: ${error.message}` 
       };
     }
 
-    // Validate URL format
-    try {
-      new URL(supabaseUrl);
-    } catch {
+    return { success: true };
+  } catch (error: any) {
+    if (error.name === 'AbortError') {
       return {
         success: false,
-        error: 'URL Supabase invalide'
+        error: 'Connection timeout to Supabase (5s)'
       };
     }
-
-    // Test simple de connectivité avec timeout augmenté (10 secondes)
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('count')
-        .limit(1)
-        .abortSignal(controller.signal);
-
-      clearTimeout(timeoutId);
-
-      if (error) {
-        console.error('❌ Erreur test Supabase:', error);
-        return { 
-          success: false, 
-          error: `Erreur Supabase: ${error.message}` 
-        };
-      }
-
-      console.log('✅ Connexion Supabase réussie');
-      return { success: true };
-    } catch (fetchError: any) {
-      clearTimeout(timeoutId);
-      
-      if (fetchError.name === 'AbortError') {
-        return {
-          success: false,
-          error: 'Timeout de connexion à Supabase (10s)'
-        };
-      }
-      
-      throw fetchError;
-    }
-  } catch (error: any) {
-    console.error('❌ Erreur test connectivité Supabase:', error);
     
-    // Messages d'erreur plus spécifiques
-    let errorMessage = error.message;
-    if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
-      errorMessage = 'Impossible de se connecter à Supabase. Vérifiez votre connexion internet et que l\'instance Supabase est accessible.';
-    } else if (error.message.includes('Timeout') || error.name === 'AbortError') {
-      errorMessage = 'Timeout de connexion à Supabase. Le service pourrait être temporairement indisponible.';
-    } else if (error.message.includes('NetworkError')) {
-      errorMessage = 'Erreur réseau lors de la connexion à Supabase.';
+    if (error.message?.includes('Failed to fetch') || error.name === 'TypeError') {
+      return {
+        success: false,
+        error: 'Cannot connect to Supabase. Please check your internet connection and Supabase configuration.'
+      };
     }
     
     return { 
       success: false, 
-      error: errorMessage
+      error: error.message || 'Unknown connection error'
     };
   }
 };
 
-// Fonction pour vérifier le statut de Supabase avec fallback gracieux
+// Get Supabase status
 export const getSupabaseStatus = async (): Promise<{
   isOnline: boolean;
   url: string;
@@ -131,15 +78,10 @@ export const getSupabaseStatus = async (): Promise<{
   const status = {
     isOnline: false,
     url: cleanUrl,
-    hasCredentials: !!(supabaseUrl && supabaseAnonKey),
+    hasCredentials: true,
     lastCheck: new Date(),
     error: undefined as string | undefined
   };
-
-  if (!status.hasCredentials) {
-    status.error = 'Variables d\'environnement Supabase manquantes';
-    return status;
-  }
 
   try {
     const testResult = await testSupabaseConnection();
@@ -154,7 +96,7 @@ export const getSupabaseStatus = async (): Promise<{
   return status;
 };
 
-// Types pour la base de données
+// Database types
 export interface Database {
   public: {
     Tables: {
